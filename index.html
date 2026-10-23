@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.87f849e7.css">
+<link rel="stylesheet" href="style.e9bdbf01.css">
 </head>
 <body>
 
@@ -24,6 +24,7 @@
       <button class="btn big" data-setup="hotseat">👥 2 Jogadores (mesmo PC)</button>
       <button class="btn big" data-setup="deck">🃏 Duelo de Decks (2 jogadores)</button>
       <button class="btn big online" data-online>🌐 Jogar online</button>
+      <button class="btn big debug" id="btnDebugMode" data-setup="debug" hidden>🛠 Modo Debug</button>
       <button class="btn big" data-screen="collection">📚 Coleção de Cartas</button>
       <button class="btn big" data-screen="rules">📜 Como Jogar</button>
     </div>
@@ -153,6 +154,10 @@
   <div class="setup-box">
     <h2 id="setupTitle">Partida</h2>
     <p id="setupDesc" class="setup-desc"></p>
+    <div class="setup-field" id="setupDebug" hidden>
+      <label>Oponente</label>
+      <div class="setup-presets"><button class="chip on" data-dbgopp="ai">🤖 Contra a IA</button><button class="chip" data-dbgopp="hotseat">👥 2 jogadores locais</button></div>
+    </div>
     <div class="setup-field">
       <label for="heartsRange">❤ Corações de cada jogador: <b id="heartsNum">10</b></label>
       <input type="range" id="heartsRange" min="1" max="40" step="1" value="10">
@@ -221,7 +226,7 @@
     <div id="toast"></div>
   </main>
   <aside id="right">
-    <div class="right-top"><span id="netBadge" class="net-badge" hidden></span><button class="icon-btn" id="btnAllCards" title="Ver todas as cartas do jogo">📚 Cartas</button><button class="icon-btn" id="btnSound" title="Som">🔊</button><button class="icon-btn" id="btnMenu">☰ Menu</button></div>
+    <div class="right-top"><span id="netBadge" class="net-badge" hidden></span><button class="icon-btn debug" id="btnDebugPanel" hidden title="Painel de testes">🛠 Debug</button><button class="icon-btn" id="btnAllCards" title="Ver todas as cartas do jogo">📚 Cartas</button><button class="icon-btn" id="btnSound" title="Som">🔊</button><button class="icon-btn" id="btnMenu">☰ Menu</button></div>
     <div id="inspector"></div>
     <div class="log-head">Registro</div>
     <div id="log"></div>
@@ -233,16 +238,17 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script src="js/sfx.b4db72af.js"></script>
-<script src="js/cards.881a075a.js"></script>
-<script src="js/engine.7796db02.js"></script>
+<script src="js/cards.2f233400.js"></script>
+<script src="js/engine.dea192f3.js"></script>
 <script src="js/ai.ed4941e9.js"></script>
-<script src="js/ui.e5d30724.js"></script>
+<script src="js/ui.60c0c5e6.js"></script>
 <script src="js/net.bfb7bd33.js"></script>
+<script src="js/debug.8079b733.js"></script>
 <script>
   // troca os marcadores de ícones no HTML estático
   document.body.innerHTML = document.body.innerHTML
     .replaceAll('ICON_DROP', ICON.drop).replaceAll('ICON_BCLOVER', ICON.bclover).replaceAll('ICON_CLOVER', ICON.clover);
 </script>
-<script src="js/main.9d4b63ab.js"></script>
+<script src="js/main.076372b2.js"></script>
 </body>
 </html>

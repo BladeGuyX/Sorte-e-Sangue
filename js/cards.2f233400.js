@@ -203,7 +203,7 @@ const CARD_DEFS = [
 
   // ---------------- EXPANSÃO 3 ----------------
   { id: 'coringa', name: 'Coringa', type: 'combatant', cost: { t: 'bluck', v: 4 }, power: 300, art: '🎭', hue: 300,
-    text: 'Ao ser jogado, escolha um combatente para imitar: o oponente vê essa carta (nome, poder e o custo pago), e o efeito dela funciona. Pode imitar qualquer combatente; se você conseguiria jogar a carta imitada, pode escolher pagar o custo aparente dela para ficar mais crível (sangue é sacrificado de verdade). Ao atacar, ser atacado ou ser destruído, o Coringa é revelado antes da ação (vale o poder dele). Se for revelado ao ser atacado e vencer, o atacante é destruído e o oponente perde 2 corações.' },
+    text: 'Imita qualquer combatente: o oponente vê a carta imitada e o efeito dela funciona (você pode pagar o custo aparente para ser mais crível). É revelado ao atacar, ser atacado ou destruído; se revelado ao ser atacado e vencer, o oponente perde 2 corações.' },
   { id: 'tita', name: 'Titã Infernal', type: 'combatant', cost: { t: 'blood', v: 3 }, power: 500, art: '🌋', hue: 15,
     text: '+150 de poder enquanto é atacado. Ao atacar, todos os combatentes do oponente perdem 50 de poder permanentemente (quem chegar a 0 é destruído). Se for destruído por uma magia, o oponente perde 2 corações.' },
   { id: 'excalibur', name: 'Excalibur', type: 'magic', kind: 'passive', cost: { t: 'luck', v: 16 }, art: '⚔️', hue: 210,

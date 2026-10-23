@@ -230,7 +230,10 @@ function render() {
   pMe.classList.toggle('current', S.current === me.id);
   pOpp.innerHTML = panelHTML(op);
   pMe.innerHTML = panelHTML(me);
-  $('#oppHand').innerHTML = op.hand.map(() => '<div class="card-back mini"></div>').join('');
+  // modo debug: dá para ver a mão do oponente
+  $('#oppHand').innerHTML = S.debug && Debug.showOpp
+    ? op.hand.map((c) => `<div class="opp-peek">${cardHTML(c)}</div>`).join('')
+    : op.hand.map(() => '<div class="card-back mini"></div>').join('');
   $('#oppMagic').innerHTML = op.magic.map((c, i) => slotHTML(op, 'magic', i, c)).join('');
   $('#oppField').innerHTML = op.field.map((c, i) => slotHTML(op, 'field', i, c)).join('');
   $('#meField').innerHTML = me.field.map((c, i) => slotHTML(me, 'field', i, c)).join('');
@@ -239,6 +242,7 @@ function render() {
   renderMid();
   renderPickBanner();
   if (UI.inspected && UI.inspected.defId) UI.inspect(findByUid(UI.inspected.uid) || UI.inspected);
+  if (S.debug) Debug.refresh();
   Net.markDirty();
 }
 
@@ -696,7 +700,7 @@ async function humanPlay(card) {
         }
       }
       choice.sacrifices = [];
-      const blood = d.cost.t === 'blood' ? d.cost.v : choice.payDisguise && DEF(choice.disguise).cost.t === 'blood' ? DEF(choice.disguise).cost.v : 0;
+      const blood = S.debug && S.debugFree ? 0 : d.cost.t === 'blood' ? d.cost.v : choice.payDisguise && DEF(choice.disguise).cost.t === 'blood' ? DEF(choice.disguise).cost.v : 0;
       if (blood) {
         let paid = 0;
         while (paid < blood) {

@@ -83,6 +83,8 @@ function newGame(mode, opts = {}) {
     turn: 1, phase: 'start', winner: null, log: [], reserved: null, lastActive: {}, effectSource: null,
   };
   if (mode === 'online') S.players[1].remote = true;
+  S.debug = !!opts.debug && mode !== 'online';
+  S.debugFree = false;
   for (const p of S.players) for (let i = 0; i < START_HAND; i++) p.hand.push(p.deck.pop());
 }
 
@@ -189,10 +191,11 @@ function canPlay(p, card) {
   if (S.phase === 'combat') return no('Na fase de ataque não dá mais para jogar cartas.');
   if (S.phase !== 'main') return no('Aguarde…');
   const d = DEF(card.defId), c = d.cost;
-  if (c.t === 'luck' && p.luck < c.v) return no(`Precisa de ${c.v} de sorte (você tem ${p.luck}).`);
-  if (c.t === 'bluck' && p.luck < c.v) return no(`Precisa gastar ${c.v} de sorte (você tem ${p.luck}).`);
+  const free = S.debug && S.debugFree;   // modo debug: custos grátis
+  if (!free && c.t === 'luck' && p.luck < c.v) return no(`Precisa de ${c.v} de sorte (você tem ${p.luck}).`);
+  if (!free && c.t === 'bluck' && p.luck < c.v) return no(`Precisa gastar ${c.v} de sorte (você tem ${p.luck}).`);
   if (d.type === 'combatant') {
-    if (c.t === 'blood') {
+    if (c.t === 'blood' && !free) {
       if (bloodAvailable(p) < c.v) return no(`Precisa sacrificar ${c.v} de sangue em combatentes.`);
     } else if (!summonSlots(p, card).length) {
       return no(ABILITIES[d.id] && ABILITIES[d.id].needsFront ? 'Precisa de um espaço livre com um combatente inimigo à frente.' : 'Nenhum espaço de combatente livre.');
@@ -518,7 +521,8 @@ async function playCard(p, card, choice = {}) {
   if (p.isAI || d.kind === 'active') await UI.showPlay(p, card);
   log(`${p.name} joga ${cn(card)}.`, p.id);
 
-  if (d.id === 'coringa' && card.disguise) {
+  const freeCost = S.debug && S.debugFree;
+  if (freeCost) { /* modo debug: nada é pago */ } else if (d.id === 'coringa' && card.disguise) {
     const fake = DEF(card.disguise).cost, shown = choice.payDisguise && fake.t === 'bluck' ? fake.v : 0;
     p.luck -= d.cost.v;
     p.luckMask = (p.luckMask || 0) + d.cost.v - shown;
@@ -926,7 +930,7 @@ function hydrateChoice(p, card, ch) {
     if (d.id === 'coringa' && !DISGUISES.some((x) => x.id === ch.disguise)) return null;
     const pay = d.id === 'coringa' && !!ch.payDisguise;
     if (pay && !disguiseOptions(p).some((x) => x.id === ch.disguise)) return null;
-    const blood = d.cost.t === 'blood' ? d.cost.v : pay && DEF(ch.disguise).cost.t === 'blood' ? DEF(ch.disguise).cost.v : 0;
+    const blood = S.debug && S.debugFree ? 0 : d.cost.t === 'blood' ? d.cost.v : pay && DEF(ch.disguise).cost.t === 'blood' ? DEF(ch.disguise).cost.v : 0;
     if (blood) {
       if (sacrifices.reduce((s, c) => s + bloodValue(c), 0) < blood) return null;
     } else if (sacrifices.length) return null;

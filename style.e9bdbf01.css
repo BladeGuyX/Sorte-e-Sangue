@@ -492,3 +492,26 @@ aside { background: var(--panel); padding: 12px; display: flex; flex-direction: 
 .search { background: #1a1422; border: 1px solid #4a3a5c; color: var(--text); border-radius: 999px; padding: 7px 14px; font-size: 14px; font-family: inherit; width: min(300px, 30vw); }
 .search:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(224,183,94,.25); }
 .search-empty { grid-column: 1 / -1; text-align: center; font-size: 15px; }
+
+/* ---------------- modo debug ---------------- */
+.btn.debug { border-color: #ff9d4d; background: linear-gradient(#7a3d10, #3d1c05); color: #ffe3c9; }
+.btn.debug.reveal { animation: pop .4s cubic-bezier(.2,.9,.3,1.4); box-shadow: 0 0 20px rgba(255,157,77,.6); }
+.icon-btn.debug { border-color: #ff9d4d; color: #ffcf9f; }
+#debugPanel { position: fixed; top: 52px; right: 0; bottom: 0; width: clamp(260px, 21vw, 330px); z-index: 45; overflow-y: auto;
+  background: #120b07; border-left: 2px solid #ff9d4d; padding: 10px 12px 20px; box-shadow: -10px 0 30px rgba(0,0,0,.6); font-size: 13px; }
+.dbg-head { display: flex; align-items: center; justify-content: space-between; color: #ffcf9f; font-size: 15px; margin-bottom: 6px; }
+.dbg-sec { border-top: 1px solid #3a2a1a; padding: 8px 0; }
+.dbg-label { color: #ffb070; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+.dbg-row { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.dbg-row .btn { padding: 4px 9px; font-size: 12px; }
+.dbg-row input[type=number] { width: 56px; background: #1a1422; border: 1px solid #4a3a5c; color: var(--text); border-radius: 6px; padding: 4px 6px; }
+.dbg-stats { margin-top: 6px; color: var(--muted); font-size: 12px; }
+.dbg-check { display: flex; gap: 6px; align-items: center; margin-top: 6px; cursor: pointer; }
+.dbg-cards .search { width: 100%; margin-bottom: 6px; }
+.dbg-list { max-height: 46vh; overflow-y: auto; }
+.dbg-card { display: flex; align-items: center; gap: 6px; padding: 3px 2px; border-bottom: 1px solid #2a2132; }
+.dbg-art { width: 22px; text-align: center; }
+.dbg-name { flex: 1; min-width: 0; line-height: 1.15; }
+.dbg-name small { display: block; color: var(--muted); font-size: 10px; }
+.dbg-card .icon-btn { padding: 2px 7px; font-size: 11px; }
+.hand.opp .opp-peek { --cw: calc(var(--cwb) * .42); margin: 0 2px; transform: translateY(8%); }

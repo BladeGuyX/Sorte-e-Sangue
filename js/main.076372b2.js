@@ -7,6 +7,7 @@ const DECK_SIZE = 40, DECK_MAX_COPIES = 2;
 const MODE_INFO = {
   ai: { title: 'Contra a IA', desc: 'Você contra o computador. Cada um usa um baralho com uma cópia de cada carta.' },
   hotseat: { title: '2 Jogadores', desc: 'Dois jogadores no mesmo computador, revezando a vez. Cada um usa um baralho com uma cópia de cada carta.' },
+  debug: { title: '🛠 Modo Debug', desc: 'Partida de testes: abra o painel 🛠 Debug durante o jogo para pegar qualquer carta, mudar corações e sorte, destruir cartas, liberar custos e mais.' },
   deck: { title: 'Duelo de Decks', desc: `Dois jogadores no mesmo computador. Cada um monta seu próprio deck de ${DECK_SIZE} cartas (até ${DECK_MAX_COPIES} cópias de cada) e eles se enfrentam.` },
 };
 
@@ -26,6 +27,8 @@ function startGame(mode, opts = {}) {
   // online: avisa o convidado antes da primeira foto do estado
   if (mode === 'online') Net.send({ t: 'start', hearts: MAX_HP, names: opts.names });
   $('#netBadge').hidden = mode !== 'online';
+  $('#btnDebugPanel').hidden = !S.debug;
+  if (typeof Debug !== 'undefined') { Debug.close(); Debug.target = 0; Debug.showOpp = false; }
   if (mode === 'online') { $('#netBadge').textContent = '🌐 Online'; $('#netBadge').title = `Conectado com ${Net.oppName}`; }
   UI.revealedFor = null;
   UI.handHidden = false;
@@ -110,7 +113,7 @@ Net.onStatus = (st) => {
 
 /* ---------------- configuração da partida ---------------- */
 
-const SETUP = { mode: 'ai', hearts: store.get('ss-hearts') || 10 };
+const SETUP = { mode: 'ai', hearts: store.get('ss-hearts') || 10, dbgOpp: 'ai' };
 
 function openSetup(mode) {
   SETUP.mode = mode;
@@ -118,6 +121,8 @@ function openSetup(mode) {
   $('#setupTitle').textContent = info.title;
   $('#setupDesc').textContent = info.desc;
   $('#setupGo').textContent = mode === 'deck' ? 'Montar os decks ▶' : 'Começar ▶';
+  $('#setupDebug').hidden = mode !== 'debug';
+  document.querySelectorAll('[data-dbgopp]').forEach((b) => b.classList.toggle('on', b.dataset.dbgopp === SETUP.dbgOpp));
   setHearts(SETUP.hearts);
   showScreen('setup');
 }
@@ -248,12 +253,15 @@ function renderCollection(filter = COLL.filter) {
 document.addEventListener('click', (e) => {
   const setup = e.target.closest('[data-setup]');
   if (setup) { SFX.play('click'); openSetup(setup.dataset.setup); return; }
+  const dop = e.target.closest('[data-dbgopp]');
+  if (dop) { SFX.play('click'); SETUP.dbgOpp = dop.dataset.dbgopp; document.querySelectorAll('[data-dbgopp]').forEach((b) => b.classList.toggle('on', b === dop)); return; }
   const hb = e.target.closest('[data-hearts]');
   if (hb) { SFX.play('click'); setHearts(hb.dataset.hearts); return; }
   if (e.target.closest('#setupGo')) {
     SFX.play('click');
     store.set('ss-hearts', SETUP.hearts);
-    if (SETUP.mode === 'deck') { DB.decks = []; openBuilder(0); }
+    if (SETUP.mode === 'debug') startGame(SETUP.dbgOpp, { hearts: SETUP.hearts, debug: true });
+    else if (SETUP.mode === 'deck') { DB.decks = []; openBuilder(0); }
     else startGame(SETUP.mode, { hearts: SETUP.hearts });
     return;
   }
@@ -316,6 +324,21 @@ document.addEventListener('click', (e) => {
       .then((ok) => { if (ok) location.href = location.href.split('?')[0]; });
   }
 });
+
+// combinação secreta no menu principal: Shift + K + M revela o modo debug
+const heldKeys = new Set();
+document.addEventListener('keydown', (e) => {
+  heldKeys.add(e.code);
+  if (!$('#menu').classList.contains('active') || !e.shiftKey || !heldKeys.has('KeyK') || !heldKeys.has('KeyM')) return;
+  const btn = $('#btnDebugMode');
+  if (!btn.hidden) return;
+  btn.hidden = false;
+  btn.classList.add('reveal');
+  SFX.init();
+  SFX.play('crit');
+});
+document.addEventListener('keyup', (e) => heldKeys.delete(e.code));
+window.addEventListener('blur', () => heldKeys.clear());
 
 document.addEventListener('contextmenu', (e) => {
   const item = e.target.closest('[data-dbadd]');
