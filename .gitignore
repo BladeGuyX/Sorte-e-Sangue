@@ -1,4 +1,0 @@
-# gerado pelo build (o Netlify gera a própria cópia ao publicar)
-dist/
-node_modules/
-.netlify/
