@@ -6,7 +6,7 @@
 let MAX_HP = 10;   // escolhido antes de cada partida (1 a 40)
 const START_HAND = 5, HAND_LIMIT = 7;
 const FIELD_SLOTS = 4, MAGIC_SLOTS = 3, LUCK_CAP = 25;
-const LUCKY_CHARGES = 4, MULLIGANS = 2, TRADE_COST = 5, FUSION_COST = 2;
+const LUCKY_CHARGES = 3, MULLIGANS = 2, TRADE_COST = 5, FUSION_COST = 2;
 
 // cost.t: 'free' | 'blood' (sacrifícios) | 'luck' (sorte mínima) | 'bluck' (sorte de sangue: gasta sorte)
 const CARD_DEFS = [
@@ -137,8 +137,8 @@ const CARD_DEFS = [
   // ---------------- EXPANSÃO 2: combatentes ----------------
   { id: 'espantalho', name: 'Espantalho', type: 'combatant', cost: { t: 'free' }, power: 100, art: '🌾', hue: 45,
     text: 'Quando um combatente inimigo o destrói, esse inimigo fica assustado e não pode atacar no próximo turno do dono dele.' },
-  { id: 'barril', name: 'Barril de Pólvora', type: 'combatant', cost: { t: 'free' }, power: 100, art: '🛢️', hue: 20,
-    text: 'Ao ser destruído em combate, explode e destrói também o combatente que lutou com ele.' },
+  { id: 'barril', name: 'Barril de Pólvora', type: 'combatant', cost: { t: 'luck', v: 6 }, power: 100, art: '🛢️', hue: 20,
+    text: 'Não pode atacar no turno em que é invocado. Ao ser destruído em combate, explode e destrói também o combatente que lutou com ele.' },
   { id: 'trapaceiro', name: 'Trapaceiro', type: 'combatant', cost: { t: 'free' }, power: 150, art: '🃏', hue: 330,
     text: 'Ao ser invocado, escolha uma carta da sua mão e troque-a por uma carta aleatória da mão do oponente.' },
   { id: 'errante', name: 'Cavaleiro Errante', type: 'combatant', cost: { t: 'free' }, power: 300, art: '🐎', hue: 210,
@@ -481,6 +481,7 @@ const ABILITIES = {
     },
   },
   barril: {
+    slowStart: true,
     async onDestroyed(c, info) {
       const k = info.source;
       if (!info.combat || !k || !onField(k)) return;

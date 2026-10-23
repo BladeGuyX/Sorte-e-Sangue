@@ -218,6 +218,7 @@ function canAttack(c) {
   if (S.phase !== 'combat' || S.turn === 1) return false;
   const a = AB(c);
   if (a.cantAttack || c.movedTurn === S.turn || c.scaredUntil === S.turn) return false;
+  if (a.slowStart && c.summonedTurn === S.turn) return false;
   if (c.attacksUsed >= (a.attacks || 1)) return false;
   return attackTargets(c).length > 0;
 }
@@ -227,6 +228,7 @@ function cantAttackReason(c) {
   if (S.phase !== 'combat') return 'Vá para a fase de ataque (botão ⚔ Atacar).';
   if (AB(c).cantAttack) return `${DEF(c.defId).name} não pode atacar.`;
   if (c.movedTurn === S.turn) return `${DEF(c.defId).name} trocou de posição neste turno e não pode atacar.`;
+  if (AB(c).slowStart && c.summonedTurn === S.turn) return `${DEF(c.defId).name} acabou de entrar e só ataca no próximo turno.`;
   if (c.scaredUntil === S.turn) return `${DEF(c.defId).name} está assustado e não ataca neste turno.`;
   if (c.attacksUsed < (AB(c).attacks || 1)) return `${DEF(c.defId).name} não tem alvo (nunca ataca diretamente).`;
   return `${DEF(c.defId).name} já atacou neste turno.`;
@@ -324,6 +326,7 @@ async function summon(p, card, side, slot) {
   card.owner = side.id;
   card.attacksUsed = 0;
   card.extraAttackUsed = false;
+  card.summonedTurn = S.turn;
   side.field[slot] = card;
   if (side !== p) {
     const where = S.mode === 'ai' ? (side.isAI ? 'no campo da IA' : 'no seu campo') : `no campo de ${side.name}`;
@@ -854,6 +857,12 @@ async function startTurn() {
 
   if (S.turn > 1) await draw(p);
 
+  if (S.turn > 1 && p.lucky < LUCKY_CHARGES) {
+    p.lucky++;
+    log(`${p.name} ganha 1 Carga Sortuda (${p.lucky}/${LUCKY_CHARGES}).`, p.id);
+    UI.floatPlayer(p, '+1 ✨', 'luck');
+    render();
+  }
   if (p.luckLock && p.luckLock.turns > 0) {
     p.luckLock.turns--;
     p.luck = p.luckLock.value;

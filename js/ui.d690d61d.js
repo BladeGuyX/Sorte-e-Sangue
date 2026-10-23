@@ -58,6 +58,12 @@ const seenPower = (c, ctx = {}) => (hiddenDisguise(c) ? apparentPower(c, ctx) : 
 const seenLuck = (p) => (S && S.players && viewer() !== p.id ? luckTxt(p) : p.luck);
 const excaliburOn = (c) => S && S.players && S.players.some((pl) => pl.magic.some((m) => m && (m.bound === c || m.boundUid === c.uid)));
 
+// Eco Arcano: qual magia do oponente seria repetida agora
+function echoLabel(ownerId) {
+  const id = S.lastActive && S.lastActive[1 - ownerId];
+  return id ? `Vai repetir: ${DEF(id).name}.` : 'Ainda não há magia do oponente para repetir.';
+}
+
 function cardHTML(c, o = {}) {
   const inst = !!c.defId;
   const masked = inst && hiddenDisguise(c);
@@ -70,6 +76,7 @@ function cardHTML(c, o = {}) {
   if (inst && c.disguise && !masked) text = `<span class="copied">Disfarçado de ${DEF(c.disguise).name}:</span> ${DEF(c.disguise).text}`;
   else if (copied && !masked) text = `<span class="copied">Efeito de ${DEF(abId).name}:</span> ${DEF(abId).text}`;
   else if (d.fusion) text = `<span class="mats">${d.materials.map((id) => DEF(id).name).join(' + ')}.</span> ${text}`;
+  if (inst && d.id === 'eco' && S && S.players) text += ` <span class="copied">${echoLabel(c.owner)}</span>`;
   let bottom = '';
   if (d.type === 'combatant') {
     const pw = inst ? (onField(c) ? seenPower(c) : d.power + c.bonus) : d.power;
@@ -275,6 +282,7 @@ UI.inspect = function (c) {
       lines.push(`<div class="i-line"><span>Dono</span>${ctl(c).name}</div>`);
     } else lines.push(`<div class="i-line"><span>Poder</span><b>${d.power + (inst ? c.bonus : 0)}</b></div>`);
   }
+  if (inst && d.id === 'eco') lines.push(`<div class="i-line copy"><span>Eco</span>${echoLabel(c.owner)}</div>`);
   if (d.fusion) lines.push(`<div class="i-line"><span>Materiais</span>${d.materials.map((id) => DEF(id).name).join(' + ')}</div>`);
   if (inst && c.disguise && !masked) lines.push(`<div class="i-line copy"><span>Disfarce</span>🎭 ${DEF(c.disguise).name} (o oponente vê esta carta)</div>`);
   else if (inst && !masked && c.abilityId !== c.defId) lines.push(`<div class="i-line copy"><span>Copiado</span>Efeito de ${DEF(c.abilityId).name}</div>`);
@@ -731,7 +739,8 @@ async function humanPlay(card) {
         if (!pk) return;
         choice.target = pk;
       } else {
-        const pk = await UI.pick({ prompt: `Usar ${d.name}?`, candidates: [], optional: true, confirmLabel: `Usar ${d.name}` });
+        const prompt = d.id === 'eco' ? `Eco Arcano — ${echoLabel(p.id)} Usar?` : `Usar ${d.name}?`;
+        const pk = await UI.pick({ prompt, candidates: [], optional: true, confirmLabel: `Usar ${d.name}` });
         if (!pk) return;
       }
     }

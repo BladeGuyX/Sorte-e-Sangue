@@ -286,7 +286,7 @@ const AI = {
 
   wantsReroll(p, r) {
     if (r <= 4) return true;
-    if (r <= 7 && p.lucky >= 3) return true;
+    if (r <= 8 && p.lucky >= 2) return true;
     // quase dá para jogar uma carta forte da mão
     return p.lucky >= 2 && p.hand.some((c) => {
       const k = DEF(c.defId).cost;
@@ -297,7 +297,7 @@ const AI = {
   async takeTurn(p) {
     UI.setThinking(true);
     await sleep(600);
-    if (canLuckyDraw(p) && p.lucky >= 3 && p.hand.length <= 3) await luckyDraw(p);
+    if (canLuckyDraw(p) && p.lucky >= 2 && p.hand.length <= 4) await luckyDraw(p);
     while (canTradeDraw(p) && p.luck >= TRADE_COST + 10 && p.hand.length < 6) await tradeDraw(p);
     for (let i = 0; i < 14; i++) {
       const mv = this.bestMove(p);
