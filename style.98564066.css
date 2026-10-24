@@ -634,3 +634,9 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
   .logo { font-size: 34px; flex-wrap: wrap; gap: 4px 10px; }
   .logo .amp { font-size: 24px; }
 }
+
+/* ---------------- app instalável ---------------- */
+.btn.install { border-color: #7fd0a0; background: linear-gradient(#1f5a3a, #0e2c1c); color: #e2ffef; }
+#game, #menu, #setup, #online { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+#btnDrawer { margin-top: env(safe-area-inset-top); }
+.modal ol { margin: 8px 0; padding-left: 20px; line-height: 1.7; }

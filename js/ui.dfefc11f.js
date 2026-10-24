@@ -928,10 +928,12 @@ document.addEventListener('keydown', (e) => {
 });
 
 // configurações de tamanho, guardadas no navegador
+// no celular os painéis e textos começam em 90%
+UI.defaultPanels = () => (matchMedia('(max-width: 820px), (max-height: 520px)').matches ? 0.9 : 1);
 UI.settings = (() => {
   let s = null;
   try { s = JSON.parse(localStorage.getItem('ss-ui')); } catch (e) { /* sem armazenamento */ }
-  return { cards: (s && s.cards) || 1, panels: (s && s.panels) || 1 };
+  return { cards: (s && s.cards) || 1, panels: (s && s.panels) || UI.defaultPanels() };
 })();
 
 UI.applySettings = function () {
@@ -969,9 +971,9 @@ UI.openSettings = function () {
     if (!b) return;
     SFX.play('click');
     if (b.dataset.set === 'reset') {
-      UI.settings.cards = 1; UI.settings.panels = 1;
-      ov.querySelector('#setCards').value = 1; ov.querySelector('#setPanels').value = 1;
-      ov.querySelector('#setCardsV').textContent = '100%'; ov.querySelector('#setPanelsV').textContent = '100%';
+      UI.settings.cards = 1; UI.settings.panels = UI.defaultPanels();
+      ov.querySelector('#setCards').value = 1; ov.querySelector('#setPanels').value = UI.settings.panels;
+      ov.querySelector('#setCardsV').textContent = '100%'; ov.querySelector('#setPanelsV').textContent = pct(UI.settings.panels);
       UI.applySettings();
     } else ov.remove();
   });
