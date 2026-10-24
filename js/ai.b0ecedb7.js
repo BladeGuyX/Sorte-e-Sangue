@@ -34,7 +34,7 @@ const AI = {
     const d = DEF(card.defId);
     let v = d.power;
     if (d.id === 'espadachim') v += 20 * p.luck;
-    if (d.id === 'berserker') v += 25 * (MAX_HP - p.hp);
+    if (d.id === 'berserker') v += 20 * (MAX_HP - p.hp);
     for (const o of p.field) {
       if (o && AB(o).allyAura) v += AB(o).allyAura;
       if (o && AB(o).cheer) v += power(o, { noCheer: true });

@@ -12,7 +12,7 @@ const LUCKY_CHARGES = 3, MULLIGANS = 2, TRADE_COST = 5, FUSION_COST = 2;
 const CARD_DEFS = [
   // ---------------- COMBATENTES SEM CUSTO ----------------
   { id: 'peso', name: 'Peso Morto', type: 'combatant', cost: { t: 'free' }, power: 100, art: '⚓', hue: 30,
-    text: 'Pode ser invocado num espaço livre do oponente, que vira o dono da carta. Não pode atacar nem ser sacrificado. Ao ser destruído, o dono perde 1 coração. Se autodestrói no início do 3º turno do dono.' },
+    text: 'Pode ser invocado num espaço livre do oponente, que vira o dono da carta. Não pode atacar nem ser sacrificado. Ao ser destruído, o dono perde 2 corações. Se autodestrói no início do 3º turno do dono.' },
   { id: 'dados', name: 'Jogador de Dados', type: 'combatant', cost: { t: 'free' }, power: 100, art: '🎲', hue: 50,
     text: 'Ao ser invocado, role sua sorte de novo. O novo valor substitui o atual.' },
   { id: 'rato', name: 'Rato de Esgoto', type: 'combatant', cost: { t: 'free' }, power: 150, art: '🐀', hue: 90,
@@ -34,7 +34,7 @@ const CARD_DEFS = [
   { id: 'bobo', name: 'Bobo da Corte', type: 'combatant', cost: { t: 'luck', v: 6 }, power: 200, art: '🤡', hue: 320,
     text: 'Ao ser invocado, o oponente descarta 1 carta aleatória da mão.' },
   { id: 'berserker', name: 'Berserker', type: 'combatant', cost: { t: 'luck', v: 7 }, power: 300, art: '🪓', hue: 15,
-    text: '+25 de poder para cada coração que você já perdeu.' },
+    text: '+20 de poder para cada coração que você já perdeu.' },
   { id: 'arqueira', name: 'Arqueira Élfica', type: 'combatant', cost: { t: 'luck', v: 8 }, power: 300, art: '🏹', hue: 110,
     text: 'Pode atacar qualquer espaço do oponente, não só o da frente.' },
   { id: 'lobo', name: 'Lobo de Duas Cabeças', type: 'combatant', cost: { t: 'luck', v: 9 }, power: 250, art: '🐺', hue: 220,
@@ -154,7 +154,7 @@ const CARD_DEFS = [
   { id: 'deus', name: 'Deus da Sorte', type: 'combatant', cost: { t: 'luck', v: 20 }, power: 777, art: '🎰', hue: 50,
     text: 'Ao atacar diretamente, causa de 1 a 5 de dano (aleatório). Quando seria destruído, tem 50% de chance de sobreviver e destruir a carta que causaria sua morte (mesmo se for uma magia).' },
   { id: 'imperador', name: 'Imperador Sangrento', type: 'combatant', cost: { t: 'bluck', v: 20 }, power: 700, art: '🤴', hue: 350,
-    text: 'Sempre que destrói um combatente, um clone dele vai para a sua mão (clones somem ao serem destruídos ou descartados). Causa 2 de dano direto, ou 4 se for o único combatente do seu lado.' },
+    text: 'Sempre que destrói um combatente, um clone desse combatente vai para a sua mão (clones somem ao serem destruídos ou descartados). Causa 2 de dano direto, ou 4 se for o único combatente do seu lado.' },
 
   // ---------------- EXPANSÃO 2: magias ----------------
   { id: 'roda', name: 'Roda da Fortuna', type: 'magic', kind: 'active', cost: { t: 'free' }, art: '🎡', hue: 50,
@@ -274,8 +274,8 @@ const ABILITIES = {
     },
     async onDestroyed(c, info) {
       const p = P(info.controller);
-      log(`${cn(c)} caiu: ${p.name} perde 1 coração.`, p.id);
-      await damage(p, 1);
+      log(`${cn(c)} caiu: ${p.name} perde 2 corações.`, p.id);
+      await damage(p, 2);
     },
   },
   carmesim: {
@@ -340,7 +340,7 @@ const ABILITIES = {
   vampiro: {
     async onKill(c) { await heal(ctl(c), 1, c); },
   },
-  berserker: { powerMod: (c) => 25 * Math.max(0, MAX_HP - ctl(c).hp) },
+  berserker: { powerMod: (c) => 20 * Math.max(0, MAX_HP - ctl(c).hp) },
   paladino: { allyAura: 50 },
   fenix: {
     async onDestroyed(c) {
@@ -580,14 +580,14 @@ const ABILITIES = {
   deus: { luckyGod: true, randomDirect: true },
   imperador: {
     directDamageFn: (c) => (ctl(c).field.filter(Boolean).length === 1 ? 4 : 2),
-    async onKill(c) {
+    async onKill(c, victim) {
       const p = ctl(c);
-      if (p.hand.length >= HAND_LIMIT) { log(`${cn(c)} tentou se clonar, mas a mão está cheia.`, p.id); return; }
-      const clone = newInstance('imperador', p.id);
+      if (p.hand.length >= HAND_LIMIT) { log(`${cn(c)} tentou clonar ${cn(victim)}, mas a mão está cheia.`, p.id); return; }
+      const clone = newInstance(victim.defId, p.id);
       clone.vanish = true;
       clone.isNew = true;
       p.hand.push(clone);
-      log(`${cn(c)} se multiplica: um clone vai para a mão de ${p.name}!`, p.id);
+      log(`${cn(c)} clona ${cn(victim)}: a cópia vai para a mão de ${p.name}!`, p.id);
       SFX.play('magic');
       render();
     },

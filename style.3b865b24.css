@@ -515,3 +515,24 @@ aside { background: var(--panel); padding: 12px; display: flex; flex-direction: 
 .dbg-name small { display: block; color: var(--muted); font-size: 10px; }
 .dbg-card .icon-btn { padding: 2px 7px; font-size: 11px; }
 .hand.opp .opp-peek { --cw: calc(var(--cwb) * .42); margin: 0 2px; transform: translateY(8%); }
+
+/* ---------------- configurações de tamanho ---------------- */
+#game { grid-template-columns: calc(clamp(190px, 15vw, 240px) * var(--ui, 1)) 1fr calc(clamp(230px, 19vw, 300px) * var(--ui, 1)); }
+#left, #right, #midbar, #pickBanner, #toast, .modal, .pass-box, .setup-box, .online-box, .menu-box, #debugPanel, .dice-box, .turn-banner span, .ps-label { zoom: var(--ui, 1); }
+#board { overflow-y: auto; overflow-x: hidden; }
+#board > * { flex-shrink: 0; }
+.modal.settings { width: min(520px, 92vw); }
+.set-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; margin: 14px 0; font-weight: 600; }
+.set-row small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
+.set-row b { color: var(--gold2); font-size: 18px; }
+.set-row input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--gold); }
+.set-row.check { display: flex; gap: 8px; cursor: pointer; }
+.set-note { color: var(--muted); font-size: 12.5px; }
+/* barra central flexível: os botões nunca invadem a sorte; a dica encolhe primeiro */
+#midbar { display: flex; gap: 12px; }
+#midbar .mid-left, #midbar .mid-center { flex: 0 0 auto; }
+#midbar .mid-right { flex: 1 1 0; min-width: 0; }
+#midbar .mid-btns { flex: 0 0 auto; }
+#midbar .hint { flex: 1 1 0; }
+/* com cartas grandes o tabuleiro rola, mas a mão fica sempre à vista */
+#meHand { position: sticky; bottom: 0; z-index: 6; background: linear-gradient(transparent, rgba(12, 8, 16, .92) 35%); }

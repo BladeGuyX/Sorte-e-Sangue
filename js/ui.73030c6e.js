@@ -912,13 +912,67 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && UI.picking && UI.picking.optional) resolvePick(null);
 });
 
+// configurações de tamanho, guardadas no navegador
+UI.settings = (() => {
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem('ss-ui')); } catch (e) { /* sem armazenamento */ }
+  return { cards: (s && s.cards) || 1, panels: (s && s.panels) || 1 };
+})();
+
+UI.applySettings = function () {
+  document.documentElement.style.setProperty('--ui', UI.settings.panels);
+  try { localStorage.setItem('ss-ui', JSON.stringify(UI.settings)); } catch (e) { /* sem armazenamento */ }
+  UI.fit();
+  if (S && $('#game').classList.contains('active')) render();
+};
+
+UI.openSettings = function () {
+  const pct = (v) => `${Math.round(v * 100)}%`;
+  const ov = document.createElement('div');
+  ov.className = 'modal-wrap';
+  ov.innerHTML = `<div class="modal settings"><h3>⚙ Configurações</h3>
+    <label class="set-row"><span>Cartas e espaços <small>(tabuleiro e mão)</small></span><b id="setCardsV">${pct(UI.settings.cards)}</b>
+      <input type="range" id="setCards" min="0.8" max="1.6" step="0.05" value="${UI.settings.cards}"></label>
+    <label class="set-row"><span>Painéis e textos <small>(laterais, barra central, janelas)</small></span><b id="setPanelsV">${pct(UI.settings.panels)}</b>
+      <input type="range" id="setPanels" min="0.8" max="1.5" step="0.05" value="${UI.settings.panels}"></label>
+    <label class="set-row check"><input type="checkbox" id="setSound" ${SFX.on ? 'checked' : ''}> Sons</label>
+    <p class="set-note">Acima de 100%, se não couber na tela, o tabuleiro ganha barra de rolagem.</p>
+    <div class="m-btns"><button class="btn" data-set="reset">Restaurar padrão</button><button class="btn primary" data-set="close">Fechar</button></div></div>`;
+  ov.addEventListener('input', (e) => {
+    if (e.target.id === 'setCards') { UI.settings.cards = +e.target.value; ov.querySelector('#setCardsV').textContent = pct(UI.settings.cards); }
+    if (e.target.id === 'setPanels') { UI.settings.panels = +e.target.value; ov.querySelector('#setPanelsV').textContent = pct(UI.settings.panels); }
+    UI.applySettings();
+  });
+  ov.addEventListener('change', (e) => {
+    if (e.target.id !== 'setSound') return;
+    SFX.on = e.target.checked;
+    const b = $('#btnSound');
+    if (b) b.textContent = SFX.on ? '🔊' : '🔇';
+  });
+  ov.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-set]');
+    if (!b) return;
+    SFX.play('click');
+    if (b.dataset.set === 'reset') {
+      UI.settings.cards = 1; UI.settings.panels = 1;
+      ov.querySelector('#setCards').value = 1; ov.querySelector('#setPanels').value = 1;
+      ov.querySelector('#setCardsV').textContent = '100%'; ov.querySelector('#setPanelsV').textContent = '100%';
+      UI.applySettings();
+    } else ov.remove();
+  });
+  $('#overlay').appendChild(ov);
+};
+
 UI.fit = function () {
   const board = $('#board');
   if (!board) return;
   const H = board.clientHeight || innerHeight, W = board.clientWidth || innerWidth;
+  // tamanho que cabe na tela × tamanho escolhido nas configurações (acima de 100% o tabuleiro rola)
   let cw = Math.min((H - 125) / 7, (W - 40) / 4.8, 132);
-  cw = Math.max(cw, 58);
+  cw = Math.max(cw, 58) * UI.settings.cards;
   document.documentElement.style.setProperty('--cwb', `${cw}px`);
 };
 
 window.addEventListener('resize', () => { UI.fit(); if (S && $('#game').classList.contains('active')) render(); });
+document.documentElement.style.setProperty('--ui', UI.settings.panels);
+document.addEventListener('click', (e) => { if (e.target.closest('[data-settings]')) { SFX.play('click'); UI.openSettings(); } });
