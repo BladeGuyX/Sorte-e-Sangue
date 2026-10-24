@@ -2,14 +2,17 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#120e18">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Sorte & Sangue</title>
 <meta name="description" content="Sorte & Sangue — duelo de cartas 1 contra 1 onde o dado decide quase tudo.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎲%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.3b865b24.css">
+<link rel="stylesheet" href="style.96a58a10.css">
 </head>
 <body>
 
@@ -19,15 +22,20 @@
   <div class="menu-box">
     <div class="logo"><span class="l1">Sorte</span><span class="amp">&amp;</span><span class="l2">Sangue</span></div>
     <p class="tagline">Um duelo de cartas onde o dado decide… quase tudo.</p>
-    <div class="menu-buttons">
-      <button class="btn primary big" data-setup="ai">⚔ Jogar contra a IA</button>
-      <button class="btn big" data-setup="hotseat">👥 2 Jogadores (mesmo PC)</button>
-      <button class="btn big" data-setup="deck">🃏 Duelo de Decks (2 jogadores)</button>
-      <button class="btn big online" data-online>🌐 Jogar online</button>
-      <button class="btn big" data-settings>⚙ Configurações</button>
-      <button class="btn big debug" id="btnDebugMode" data-setup="debug" hidden>🛠 Modo Debug</button>
+    <div class="menu-buttons" id="menuMain">
+      <button class="btn primary big" data-menu="play">▶ Jogar</button>
       <button class="btn big" data-screen="collection">📚 Coleção de Cartas</button>
       <button class="btn big" data-screen="rules">📜 Como Jogar</button>
+      <button class="btn big" data-settings>⚙ Configurações</button>
+    </div>
+    <div class="menu-buttons" id="menuPlay" hidden>
+      <button class="btn primary big" data-setup="ai">⚔ Contra a IA</button>
+      <button class="btn big" data-setup="hotseat">👥 2 Jogadores (mesmo aparelho)</button>
+      <button class="btn big" data-setup="deck">🃏 Duelo de Decks</button>
+      <button class="btn big khaos" data-setup="khaos">🌀 Khaos</button>
+      <button class="btn big online" data-online>🌐 Jogar online</button>
+      <button class="btn big debug" id="btnDebugMode" data-setup="debug" hidden>🛠 Modo Debug</button>
+      <button class="btn big" data-menu="main">← Voltar</button>
     </div>
   </div>
 </div>
@@ -81,6 +89,19 @@
       <p>No menu, escolha <b>🌐 Jogar online</b>. Quem cria a sala escolhe quantos corações cada um terá e recebe um <b>código</b> e um <b>link de convite</b> para mandar ao amigo. O amigo abre o link (ou digita o código em "Entrar numa sala") e a partida começa sozinha. Cada um só vê a própria mão. Se alguém sair, o outro é avisado. Ao fim, quem criou a sala pode pedir revanche.</p>
     </section>
     <section>
+      <h3>Modo Khaos 🌀</h3>
+      <p>Antes da partida, cada jogador escolhe <b>3 cartas para banir</b> (elas saem dos dois baralhos). Durante o jogo, a cada 1 a 4 rodadas (sorteado; uma rodada é um turno de cada jogador) acontece um evento:</p>
+      <ul>
+        <li><b>Flip</b> — o campo se inverte: as cartas em jogo de cada lado vão para o outro.</li>
+        <li><b>Trade</b> — os jogadores trocam as mãos.</li>
+        <li><b>Change</b> — todas as cartas das mãos e do campo viram outras aleatórias (combatentes continuam nos espaços de combatente e magias nos de magia).</li>
+        <li><b>Ruin</b> — todos os combatentes perdem 300 de poder; quem chega a 0 é destruído.</li>
+        <li><b>Obliterate</b> — o campo inteiro é destruído, inclusive as magias.</li>
+        <li><b>Bless</b> — cada jogador escolhe: curar 5 corações, comprar 2 cartas ou jogar a próxima carta sem custo.</li>
+      </ul>
+      <p>Funciona contra a IA, com 2 jogadores no mesmo aparelho e online (marque "Modo Khaos" ao criar a sala).</p>
+    </section>
+    <section>
       <h3>Fusões 🧬</h3>
       <p>Alguns combatentes e algumas magias podem ser fundidos numa carta muito mais forte. Quando todos os materiais estão em jogo do seu lado (combatentes no campo, ou magias nos espaços de magia), aparece o botão <b>🧬 Fusão</b> (fase principal). Fundir destrói os materiais, custa <b>2 corações</b> e a carta de fusão surge num espaço livre seu (inclusive os que os materiais ocupavam). Cartas de fusão não ficam no baralho e somem quando destruídas. Veja todas em Coleção → Fusões.</p>
     </section>
@@ -98,6 +119,7 @@
         <li>Se o texto de uma carta não couber, role a roda do mouse sobre ele para ler o resto.</li>
         <li>O botão <b>📚 Cartas</b> mostra todas as cartas do jogo durante a partida. No modo 2 jogadores, o botão <b>🙈 Esconder mão</b> esconde suas cartas.</li>
         <li>Se o baralho acabar, o descarte é embaralhado de volta.</li>
+        <li><b>No celular:</b> segure o dedo numa carta para ver os detalhes; o botão <b>☰</b> abre o registro, os detalhes e o menu.</li>
       </ul>
     </section>
   </div>
@@ -136,6 +158,7 @@
           <button class="chip" data-onhearts="20">20</button>
           <button class="chip" data-onhearts="40">40</button>
         </div>
+        <label class="dbg-check on-khaos"><input type="checkbox" id="onKhaos"> 🌀 Modo Khaos (banimentos e eventos)</label>
         <button class="btn primary big" id="onCreateBtn">Criar sala</button>
       </section>
       <section>
@@ -226,8 +249,9 @@
     <div id="pickBanner"></div>
     <div id="toast"></div>
   </main>
+  <button class="icon-btn" id="btnDrawer" title="Detalhes, registro e menu">☰</button>
   <aside id="right">
-    <div class="right-top"><span id="netBadge" class="net-badge" hidden></span><button class="icon-btn debug" id="btnDebugPanel" hidden title="Painel de testes">🛠 Debug</button><button class="icon-btn" id="btnAllCards" title="Ver todas as cartas do jogo">📚 Cartas</button><button class="icon-btn" data-settings title="Configurações (tamanho da interface)">⚙</button><button class="icon-btn" id="btnSound" title="Som">🔊</button><button class="icon-btn" id="btnMenu">☰ Menu</button></div>
+    <div class="right-top"><span id="netBadge" class="net-badge" hidden></span><span id="khaosBadge" class="net-badge khaos" hidden>🌀 Khaos</span><button class="icon-btn debug" id="btnDebugPanel" hidden title="Painel de testes">🛠 Debug</button><button class="icon-btn" id="btnAllCards" title="Ver todas as cartas do jogo">📚 Cartas</button><button class="icon-btn" data-settings title="Configurações (tamanho da interface)">⚙</button><button class="icon-btn" id="btnSound" title="Som">🔊</button><button class="icon-btn" id="btnMenu">☰ Menu</button></div>
     <div id="inspector"></div>
     <div class="log-head">Registro</div>
     <div id="log"></div>
@@ -240,16 +264,17 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script src="js/sfx.b4db72af.js"></script>
 <script src="js/cards.e9adbb46.js"></script>
-<script src="js/engine.6113afac.js"></script>
-<script src="js/ai.b0ecedb7.js"></script>
-<script src="js/ui.73030c6e.js"></script>
-<script src="js/net.bfb7bd33.js"></script>
+<script src="js/engine.6aa30ea1.js"></script>
+<script src="js/ai.bb9f3c94.js"></script>
+<script src="js/ui.ca5a89f7.js"></script>
+<script src="js/net.0a7b340f.js"></script>
 <script src="js/debug.8079b733.js"></script>
+<script src="js/khaos.3cf802a4.js"></script>
 <script>
   // troca os marcadores de ícones no HTML estático
   document.body.innerHTML = document.body.innerHTML
     .replaceAll('ICON_DROP', ICON.drop).replaceAll('ICON_BCLOVER', ICON.bclover).replaceAll('ICON_CLOVER', ICON.clover);
 </script>
-<script src="js/main.076372b2.js"></script>
+<script src="js/main.7a0b243c.js"></script>
 </body>
 </html>

@@ -161,6 +161,7 @@ function panelHTML(p) {
       <span title="Cargas Sortudas (partida inteira): re-rolar a sorte ou comprar 1 carta extra no início do turno">✨ Cargas Sortudas: <b>${p.lucky}</b>/${LUCKY_CHARGES}</span>
       ${isCur ? `<span title="Trocar um combatente de posição (fase principal)">↔ Troca: <b>${p.moveUsed ? 'usada' : 'disponível'}</b></span>` : ''}
       ${p.luckLock ? `<span class="lock" title="Caixinha Dourada">🎁 Sorte guardada: ${p.luckLock.value + (viewer() !== p.id ? p.luckLock.mask || 0 : 0)} (${p.luckLock.turns} turno${p.luckLock.turns > 1 ? 's' : ''})</span>` : ''}
+      ${p.freeCard ? '<span class="lock" title="Bênção do Khaos">🎁 A próxima carta com custo sai de graça</span>' : ''}
       ${p.luckDebt ? `<span class="debt" title="Efeito do Ladrão de Sorte">🦝 −${p.luckDebt} de sorte na próxima rolagem</span>` : ''}
     </div>`;
 }
@@ -250,6 +251,9 @@ function render() {
   renderPickBanner();
   if (UI.inspected && UI.inspected.defId) UI.inspect(findByUid(UI.inspected.uid) || UI.inspected);
   if (S.debug) Debug.refresh();
+  const kb = $('#khaosBadge');
+  kb.hidden = !S.khaos;
+  if (S.khaos) kb.title = `Modo Khaos — banidas: ${(S.khaos.banned || []).map((id) => DEF(id).name).join(', ') || 'nenhuma'}`;
   Net.markDirty();
 }
 
@@ -562,6 +566,17 @@ UI.rollDice = async function (label, value, opts = {}) {
   return choice;
 };
 
+// evento do modo Khaos: faixa grande com o nome e a descrição
+UI.khaosBanner = async function (ev) {
+  const b = document.createElement('div');
+  b.className = 'turn-banner khaos';
+  b.innerHTML = `<span>${ev.icon} KHAOS — ${ev.name}!</span><small>${ev.desc}</small>`;
+  $('#overlay').appendChild(b);
+  SFX.play('crit');
+  await sleep(1900);
+  b.remove();
+};
+
 UI.banner = async function (text) {
   const b = document.createElement('div');
   b.className = 'turn-banner';
@@ -618,7 +633,7 @@ UI.showGameOver = function () {
       ? '<button class="btn big" disabled>Aguardando o anfitrião pedir revanche…</button>'
       : `<button class="btn primary big" data-again>${online ? 'Revanche' : 'Jogar de novo'}</button>`}<button class="btn big" data-menu>Menu</button></div></div>`;
   const again = ov.querySelector('[data-again]');
-  if (again) again.addEventListener('click', () => { ov.remove(); startGame(S.mode, online ? { hearts: MAX_HP, names: [Net.myName, Net.oppName] } : S.opts); });
+  if (again) again.addEventListener('click', () => { ov.remove(); startGame(S.mode, S.opts); });
   ov.querySelector('[data-menu]').addEventListener('click', () => location.href = location.href.split('?')[0]);
   $('#overlay').appendChild(ov);
 };
@@ -708,7 +723,7 @@ async function humanPlay(card) {
         }
       }
       choice.sacrifices = [];
-      const blood = S.debug && S.debugFree ? 0 : d.cost.t === 'blood' ? d.cost.v : choice.payDisguise && DEF(choice.disguise).cost.t === 'blood' ? DEF(choice.disguise).cost.v : 0;
+      const blood = (S.debug && S.debugFree) || p.freeCard ? 0 : d.cost.t === 'blood' ? d.cost.v : choice.payDisguise && DEF(choice.disguise).cost.t === 'blood' ? DEF(choice.disguise).cost.v : 0;
       if (blood) {
         let paid = 0;
         while (paid < blood) {
@@ -970,9 +985,55 @@ UI.fit = function () {
   // tamanho que cabe na tela × tamanho escolhido nas configurações (acima de 100% o tabuleiro rola)
   let cw = Math.min((H - 125) / 7, (W - 40) / 4.8, 132);
   cw = Math.max(cw, 58) * UI.settings.cards;
+  document.body.classList.toggle('tiny-cards', cw < 92);   // cartas pequenas (celular): só nome, arte e poder
   document.documentElement.style.setProperty('--cwb', `${cw}px`);
 };
 
 window.addEventListener('resize', () => { UI.fit(); if (S && $('#game').classList.contains('active')) render(); });
 document.documentElement.style.setProperty('--ui', UI.settings.panels);
 document.addEventListener('click', (e) => { if (e.target.closest('[data-settings]')) { SFX.play('click'); UI.openSettings(); } });
+
+/* ---------------- celular / toque ---------------- */
+
+// detalhes de uma carta numa janela (no toque não existe "passar o mouse")
+function showCardDetails(el) {
+  let c = null;
+  if (el.dataset.uid) c = findByUid(+el.dataset.uid);
+  else if (el.dataset.muid) c = findByUid(+el.dataset.muid);
+  if (!c && el.dataset.def) c = DEF(el.dataset.def);
+  if (!c) return;
+  let html;
+  if (S && $('#game').classList.contains('active')) { UI.inspect(c); html = $('#inspector').innerHTML; }
+  else html = `<div class="i-card">${cardHTML(c, { modal: true })}</div>`;
+  modal({ title: '', cls: 'detail', html: `<div class="detail-view">${html}</div>`, buttons: [{ label: 'Fechar', value: null, cls: 'primary' }] });
+}
+
+// segurar o dedo numa carta por meio segundo abre os detalhes (sem jogar a carta)
+let pressTimer = null;
+document.addEventListener('touchstart', (e) => {
+  UI.lastTouch = Date.now();
+  const el = e.target.closest('.card');
+  if (!el || el.closest('#inspector') || el.closest('.detail-view')) return;
+  clearTimeout(pressTimer);
+  pressTimer = setTimeout(() => { pressTimer = null; UI.suppressClick = true; SFX.play('click'); showCardDetails(el); }, 450);
+}, { passive: true });
+const cancelPress = () => { clearTimeout(pressTimer); pressTimer = null; };
+['touchend', 'touchcancel'].forEach((t) => document.addEventListener(t, cancelPress));
+document.addEventListener('touchmove', cancelPress, { passive: true });
+// o toque que abriu os detalhes não pode também jogar/atacar
+document.addEventListener('click', (e) => {
+  if (!UI.suppressClick) return;
+  UI.suppressClick = false;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+}, true);
+document.addEventListener('contextmenu', (e) => { if (Date.now() - (UI.lastTouch || 0) < 1500 && e.target.closest('.card')) e.preventDefault(); });
+
+// gaveta lateral (detalhes, registro e botões) no celular
+document.addEventListener('click', (e) => {
+  const right = $('#right');
+  const btn = $('#btnDrawer');
+  if (e.target.closest('#btnDrawer')) { SFX.play('click'); right.classList.toggle('open'); }
+  else if (right.classList.contains('open') && !e.target.closest('#right') && !e.target.closest('#overlay')) right.classList.remove('open');
+  btn.textContent = right.classList.contains('open') ? '✕' : '☰';
+});

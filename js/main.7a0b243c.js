@@ -7,6 +7,7 @@ const DECK_SIZE = 40, DECK_MAX_COPIES = 2;
 const MODE_INFO = {
   ai: { title: 'Contra a IA', desc: 'Você contra o computador. Cada um usa um baralho com uma cópia de cada carta.' },
   hotseat: { title: '2 Jogadores', desc: 'Dois jogadores no mesmo computador, revezando a vez. Cada um usa um baralho com uma cópia de cada carta.' },
+  khaos: { title: '🌀 Khaos', desc: 'Antes de começar, cada jogador bane 3 cartas. Durante a partida, a cada 1 a 4 rodadas acontece um evento caótico: Flip, Trade, Change, Ruin, Obliterate ou Bless.' },
   debug: { title: '🛠 Modo Debug', desc: 'Partida de testes: abra o painel 🛠 Debug durante o jogo para pegar qualquer carta, mudar corações e sorte, destruir cartas, liberar custos e mais.' },
   deck: { title: 'Duelo de Decks', desc: `Dois jogadores no mesmo computador. Cada um monta seu próprio deck de ${DECK_SIZE} cartas (até ${DECK_MAX_COPIES} cópias de cada) e eles se enfrentam.` },
 };
@@ -15,6 +16,11 @@ const store = {
   get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* armazenamento indisponível */ } },
 };
+
+function showMenu(which) {
+  $('#menuMain').hidden = which !== 'main';
+  $('#menuPlay').hidden = which !== 'play';
+}
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
@@ -41,7 +47,7 @@ function startGame(mode, opts = {}) {
   showScreen('game');
   UI.fit();
   render();
-  act(async () => { await mulliganPhase(); await startTurn(); });
+  act(async () => { if (S.khaos) Khaos.announce(); await mulliganPhase(); await startTurn(); });
 }
 
 /* ---------------- sala online ---------------- */
@@ -121,7 +127,7 @@ function openSetup(mode) {
   $('#setupTitle').textContent = info.title;
   $('#setupDesc').textContent = info.desc;
   $('#setupGo').textContent = mode === 'deck' ? 'Montar os decks ▶' : 'Começar ▶';
-  $('#setupDebug').hidden = mode !== 'debug';
+  $('#setupDebug').hidden = mode !== 'debug' && mode !== 'khaos';
   document.querySelectorAll('[data-dbgopp]').forEach((b) => b.classList.toggle('on', b.dataset.dbgopp === SETUP.dbgOpp));
   setHearts(SETUP.hearts);
   showScreen('setup');
@@ -251,6 +257,8 @@ function renderCollection(filter = COLL.filter) {
 /* ---------------- ligações ---------------- */
 
 document.addEventListener('click', (e) => {
+  const mm = e.target.closest('[data-menu]');
+  if (mm) { SFX.play('click'); showMenu(mm.dataset.menu); return; }
   const setup = e.target.closest('[data-setup]');
   if (setup) { SFX.play('click'); openSetup(setup.dataset.setup); return; }
   const dop = e.target.closest('[data-dbgopp]');
@@ -261,6 +269,7 @@ document.addEventListener('click', (e) => {
     SFX.play('click');
     store.set('ss-hearts', SETUP.hearts);
     if (SETUP.mode === 'debug') startGame(SETUP.dbgOpp, { hearts: SETUP.hearts, debug: true });
+    else if (SETUP.mode === 'khaos') startKhaos(SETUP.dbgOpp, SETUP.hearts);
     else if (SETUP.mode === 'deck') { DB.decks = []; openBuilder(0); }
     else startGame(SETUP.mode, { hearts: SETUP.hearts });
     return;
@@ -269,7 +278,7 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-online]')) { SFX.play('click'); openOnline(''); return; }
   const oh = e.target.closest('[data-onhearts]');
   if (oh) { SFX.play('click'); setOnlineHearts(oh.dataset.onhearts); return; }
-  if (e.target.closest('#onCreateBtn')) { SFX.init(); SFX.play('click'); store.set('ss-hearts', ON.hearts); Net.host(playerName(), ON.hearts); return; }
+  if (e.target.closest('#onCreateBtn')) { SFX.init(); SFX.play('click'); store.set('ss-hearts', ON.hearts); Net.host(playerName(), ON.hearts, $('#onKhaos').checked); return; }
   if (e.target.closest('#onJoinBtn')) { SFX.init(); SFX.play('click'); Net.join($('#onCode').value, playerName()); return; }
   if (e.target.closest('#onCancel')) { SFX.play('click'); Net.reset(); renderOnlineStatus({ state: 'idle' }); return; }
   if (e.target.closest('#onCopyLink')) { copyText($('#onLink').value, e.target.closest('#onCopyLink')); return; }
@@ -333,6 +342,7 @@ document.addEventListener('keydown', (e) => {
   const btn = $('#btnDebugMode');
   if (!btn.hidden) return;
   btn.hidden = false;
+  showMenu('play');
   btn.classList.add('reveal');
   SFX.init();
   SFX.play('crit');
@@ -343,6 +353,7 @@ window.addEventListener('blur', () => heldKeys.clear());
 document.addEventListener('contextmenu', (e) => {
   const item = e.target.closest('[data-dbadd]');
   if (!item) return;
+  if (Date.now() - (UI.lastTouch || 0) < 1500) { e.preventDefault(); return; }   // no toque, segurar mostra detalhes
   e.preventDefault();
   removeCard(item.dataset.dbadd);
 });

@@ -86,7 +86,7 @@ const AI = {
           continue;
         }
         let sacs = [];
-        if (d.cost.t === 'blood') {
+        if (d.cost.t === 'blood' && !p.freeCard) {
           sacs = this.pickSacs(p, d.cost.v);
           if (!sacs) continue;
           const lost = sacs.reduce((s, c) => s + this.value(c), 0);
@@ -375,6 +375,12 @@ const AI = {
       }
       case 'choose': {
         const ok = d.options.filter((o) => !o.disabled);
+        if (d.purpose === 'bless') {
+          const can = (v) => ok.some((o) => o.value === v);
+          if (can('heal') && p.hp <= MAX_HP - 4) return 'heal';
+          if (can('free') && p.hand.some((c) => DEF(c.defId).cost.t !== 'free' && (DEF(c.defId).cost.v || 0) >= 12)) return 'free';
+          return can('draw') ? 'draw' : ok[0] && ok[0].value;
+        }
         if (d.purpose === 'superbonus') {
           const charge = ok.find((o) => o.value === 'charge');
           if (charge && p.lucky <= 1 && p.hp >= 6) return 'charge';

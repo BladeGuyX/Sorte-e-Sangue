@@ -9,11 +9,11 @@
    - responde às perguntas do motor (alvos, Mago Branco, mão cheia...).
    ============================================================ */
 
-const NET_PROTOCOL = 2;
+const NET_PROTOCOL = 3;
 const HOST_ID = 0, GUEST_ID = 1;
 const ROOM_PREFIX = 'sorte-sangue-';
 // efeitos visuais que o anfitrião repete na tela do convidado
-const FX = ['float', 'floatPlayer', 'animSummon', 'animDestroy', 'animAttack', 'animClash', 'animDamage', 'animHeal',
+const FX = ['khaosBanner', 'float', 'floatPlayer', 'animSummon', 'animDestroy', 'animAttack', 'animClash', 'animDamage', 'animHeal',
   'rollDice', 'banner', 'showPlay', 'toast', 'rects', 'flip', 'addLog', 'showGameOver'];
 
 const isCard = (v) => v && typeof v === 'object' && 'uid' in v && 'defId' in v;
@@ -90,13 +90,14 @@ const Net = {
     return false;
   },
 
-  host(name, hearts, tries = 0) {
+  host(name, hearts, khaos = false, tries = 0) {
     if (!this.libraryOk()) return;
     this.reset();
     this.role = 'host';
     this.myId = HOST_ID;
     this.myName = name;
     this.hearts = hearts;
+    this.khaos = khaos;
     const code = this.roomCode();
     this.code = code;
     this.onStatus({ state: 'creating' });
@@ -106,7 +107,7 @@ const Net = {
     peer.on('connection', (conn) => this.acceptGuest(conn));
     peer.on('disconnected', () => { if (!this.started && !this.closing) peer.reconnect(); });
     peer.on('error', (e) => {
-      if (e.type === 'unavailable-id' && tries < 5) { peer.destroy(); this.host(name, hearts, tries + 1); return; }
+      if (e.type === 'unavailable-id' && tries < 5) { peer.destroy(); this.host(name, hearts, khaos, tries + 1); return; }
       if (this.started) return;   // depois de conectado, quem manda é a conexão
       this.onStatus({ state: 'error', msg: this.errorText(e) });
     });
@@ -232,12 +233,14 @@ const Net = {
         let name = String(m.name || 'Convidado').slice(0, 18).trim() || 'Convidado';
         if (name === this.myName) name += ' (2)';
         this.oppName = name;
-        this.send({ t: 'welcome', hostName: this.myName, hearts: this.hearts });
+        this.send({ t: 'welcome', hostName: this.myName, hearts: this.hearts, khaos: this.khaos });
         this.started = true;
         this.onStatus({ state: 'connected' });
-        startGame('online', { hearts: this.hearts, names: [this.myName, name] });
+        if (this.khaos) this.khaosBans(name);
+        else startGame('online', { hearts: this.hearts, names: [this.myName, name] });
         break;
       }
+      case 'bans': if (this.banResolve) { this.banResolve(Khaos.validBans(m.ids)); this.banResolve = null; } break;
       case 'action': this.runRemoteAction(m); break;
       case 'answer': {
         const q = this.pending.get(m.id);
@@ -259,6 +262,12 @@ const Net = {
         this.started = true;
         this.oppName = m.hostName;
         this.onStatus({ state: 'connected' });
+        break;
+      case 'banAsk':
+        Khaos.pickBans(this.myName).then((ids) => {
+          this.send({ t: 'bans', ids });
+          Khaos.waiting(`Aguardando ${this.oppName} escolher as cartas banidas…`);
+        });
         break;
       case 'reject':
         this.onStatus({ state: 'error', msg: m.reason });
@@ -287,10 +296,11 @@ const Net = {
     return {
       mode: 'online', turn: S.turn, current: S.current, phase: S.phase, winner: S.winner, tauntUsed: !!S.tauntUsed,
       lastActive: S.lastActive, maxHp: MAX_HP, opts: { hearts: MAX_HP },
+      khaos: S.khaos ? { banned: S.khaos.banned } : null,
       players: S.players.map((p) => ({
         id: p.id, name: p.name, hp: p.hp, luck: p.id === GUEST_ID ? p.luck : luckTxt(p), lucky: p.lucky, luckDebt: p.luckDebt,
         luckLock: p.luckLock && (p.id === GUEST_ID ? p.luckLock : { value: p.luckLock.value + (p.luckLock.mask || 0), turns: p.luckLock.turns, mask: 0 }),
-        lastRoll: p.lastRoll, moveUsed: p.moveUsed, acted: p.acted, luckyDrawUsed: p.luckyDrawUsed,
+        lastRoll: p.lastRoll, moveUsed: p.moveUsed, acted: p.acted, luckyDrawUsed: p.luckyDrawUsed, freeCard: !!p.freeCard,
         deckCount: p.deck.length,
         hand: p.id === GUEST_ID ? p.hand.map(cardWire) : p.hand.length,
         field: p.field.map((c) => c && cardWire(c)),
@@ -364,6 +374,18 @@ const Net = {
     return res;
   },
 
+  // Khaos online: os dois banem ao mesmo tempo; depois o anfitrião começa a partida
+  async khaosBans(guestName) {
+    const theirs = new Promise((res) => { this.banResolve = res; });
+    this.send({ t: 'banAsk' });
+    const mine = await Khaos.pickBans(this.myName);
+    const done = Khaos.waiting(`Aguardando ${guestName} escolher as cartas banidas…`);
+    const other = await theirs;
+    done();
+    if (!this.active()) return;
+    startGame('online', { hearts: this.hearts, names: [this.myName, guestName], khaos: true, banned: [...new Set([...mine, ...other])] });
+  },
+
   async runRemoteAction(m) {
     while (UI.busy) await sleep(40);
     let ok = false;
@@ -383,7 +405,7 @@ const Net = {
     });
     const first = !S || S.mode !== 'online';
     S = { mode: 'online', opts: s.opts, turn: s.turn, current: s.current, phase: s.phase, winner: s.winner, tauntUsed: s.tauntUsed,
-      lastActive: s.lastActive || {}, players, log: [], reserved: null, effectSource: null };
+      lastActive: s.lastActive || {}, khaos: s.khaos || null, players, log: [], reserved: null, effectSource: null };
     if (first) UI.fit();
     render();
   },

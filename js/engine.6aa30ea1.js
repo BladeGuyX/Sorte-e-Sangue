@@ -60,8 +60,9 @@ function apparentPower(c, ctx = {}) {
 }
 
 // deckIds: lista de ids (modo de decks montados); sem ela, uma cópia de cada carta
+let BANNED = new Set();   // cartas banidas (modo Khaos)
 function mkPlayer(id, name, isAI, deckIds) {
-  const ids = deckIds || DECK_POOL.map((d) => d.id);
+  const ids = deckIds || DECK_POOL.filter((d) => !BANNED.has(d.id)).map((d) => d.id);
   const deck = shuffle(ids.map((defId) => newInstance(defId, id)));
   return { id, name, isAI, hp: MAX_HP, luck: 0, deck, hand: [], discard: [],
     field: Array(FIELD_SLOTS).fill(null), magic: Array(MAGIC_SLOTS).fill(null),
@@ -76,6 +77,7 @@ function newGame(mode, opts = {}) {
   MAX_HP = Math.max(1, Math.min(40, opts.hearts || 10));
   const names = opts.names || (mode === 'ai' ? ['Você', 'IA'] : ['Jogador 1', 'Jogador 2']);
   const decks = opts.decks || [];
+  BANNED = new Set(opts.khaos ? opts.banned || [] : []);
   S = {
     mode, opts,
     players: [mkPlayer(0, names[0], false, decks[0]), mkPlayer(1, names[1], mode === 'ai', decks[1])],
@@ -84,6 +86,7 @@ function newGame(mode, opts = {}) {
   };
   if (mode === 'online') S.players[1].remote = true;
   S.debug = !!opts.debug && mode !== 'online';
+  S.khaos = typeof Khaos !== 'undefined' ? Khaos.setup(opts) : null;
   S.debugFree = false;
   for (const p of S.players) for (let i = 0; i < START_HAND; i++) p.hand.push(p.deck.pop());
 }
@@ -191,7 +194,7 @@ function canPlay(p, card) {
   if (S.phase === 'combat') return no('Na fase de ataque não dá mais para jogar cartas.');
   if (S.phase !== 'main') return no('Aguarde…');
   const d = DEF(card.defId), c = d.cost;
-  const free = S.debug && S.debugFree;   // modo debug: custos grátis
+  const free = (S.debug && S.debugFree) || !!p.freeCard;   // debug ou bênção do Khaos: custos grátis
   if (!free && c.t === 'luck' && p.luck < c.v) return no(`Precisa de ${c.v} de sorte (você tem ${p.luck}).`);
   if (!free && c.t === 'bluck' && p.luck < c.v) return no(`Precisa gastar ${c.v} de sorte (você tem ${p.luck}).`);
   if (d.type === 'combatant') {
@@ -420,6 +423,14 @@ async function destroy(card, opts = {}) {
   if (l.zone === 'field') {
     if (dAb.onDestroyed) await dAb.onDestroyed(card, card.death);
     for (const pl of S.players) for (const m of [...pl.magic]) if (m && m.bound === card) await passExcalibur(m, pl);
+    for (const pl of S.players) {
+      for (const m of [...pl.magic]) {
+        if (!m || m.controlled !== card) continue;
+        m.controlled = null;
+        log(`Sem nada para controlar, o ${cn(m)} se desfaz.`, pl.id);
+        await destroy(m, { noSave: true, selfDestruct: true });
+      }
+    }
     for (const x of allField()) {
       const a = AB(x);
       if (a.onAnyDestroyed && locate(x)) await a.onAnyDestroyed(x, card);
@@ -524,7 +535,12 @@ async function playCard(p, card, choice = {}) {
   if (p.isAI || d.kind === 'active') await UI.showPlay(p, card);
   log(`${p.name} joga ${cn(card)}.`, p.id);
 
-  const freeCost = S.debug && S.debugFree;
+  let freeCost = S.debug && S.debugFree;
+  if (!freeCost && p.freeCard && d.cost.t !== 'free') {
+    p.freeCard = false;
+    freeCost = true;
+    log(`🎁 ${p.name} usa a bênção: ${cn(card)} sai sem custo.`, p.id);
+  }
   if (freeCost) { /* modo debug: nada é pago */ } else if (d.id === 'coringa' && card.disguise) {
     const fake = DEF(card.disguise).cost, shown = choice.payDisguise && fake.t === 'bluck' ? fake.v : 0;
     p.luck -= d.cost.v;
@@ -899,6 +915,7 @@ async function startTurn() {
   for (const c of [...p.field]) {
     if (c && AB(c).onOwnerTurnStart && locate(c)) await AB(c).onOwnerTurnStart(c);
   }
+  if (S.khaos) await Khaos.maybeEvent();
   S.phase = 'main';
   render();
   if (p.isAI) await AI.takeTurn(p);
@@ -939,7 +956,7 @@ function hydrateChoice(p, card, ch) {
     if (d.id === 'coringa' && !DISGUISES.some((x) => x.id === ch.disguise)) return null;
     const pay = d.id === 'coringa' && !!ch.payDisguise;
     if (pay && !disguiseOptions(p).some((x) => x.id === ch.disguise)) return null;
-    const blood = S.debug && S.debugFree ? 0 : d.cost.t === 'blood' ? d.cost.v : pay && DEF(ch.disguise).cost.t === 'blood' ? DEF(ch.disguise).cost.v : 0;
+    const blood = (S.debug && S.debugFree) || p.freeCard ? 0 : d.cost.t === 'blood' ? d.cost.v : pay && DEF(ch.disguise).cost.t === 'blood' ? DEF(ch.disguise).cost.v : 0;
     if (blood) {
       if (sacrifices.reduce((s, c) => s + bloodValue(c), 0) < blood) return null;
     } else if (sacrifices.length) return null;
