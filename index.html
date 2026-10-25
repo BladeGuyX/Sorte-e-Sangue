@@ -51,7 +51,7 @@
   <div class="rules-body">
     <section>
       <h3>Objetivo</h3>
-      <p>Duelo 1 contra 1 em turnos. Cada jogador começa com <b>5 cartas</b> e o número de <b>corações</b> escolhido antes da partida (de 1 a 40; o padrão é 10). Quem ficar sem corações perde na hora.</p>
+      <p>Duelo 1 contra 1 em turnos. Cada jogador começa com <b>5 cartas</b> e o número de <b>corações</b> escolhido antes da partida (de 1 a 40; o padrão é 15). Quem ficar sem corações perde na hora.</p>
       <p>Logo no início da partida, cada jogador pode <b>re-rolar a mão inicial até 2 vezes</b> (as cartas voltam ao baralho e ele compra 5 novas). Essa chance não pode ser guardada para depois.</p>
     </section>
     <section>
@@ -155,11 +155,12 @@
     <div class="online-cols">
       <section>
         <h3>Criar sala</h3>
-        <label for="onHeartsRange">❤ Corações de cada jogador: <b id="onHeartsNum">10</b></label>
-        <input type="range" id="onHeartsRange" min="1" max="40" step="1" value="10">
+        <label for="onHeartsRange">❤ Corações de cada jogador: <b id="onHeartsNum">15</b></label>
+        <input type="range" id="onHeartsRange" min="1" max="40" step="1" value="15">
         <div class="setup-presets">
           <button class="chip" data-onhearts="5">5</button>
           <button class="chip" data-onhearts="10">10</button>
+          <button class="chip" data-onhearts="15">15</button>
           <button class="chip" data-onhearts="20">20</button>
           <button class="chip" data-onhearts="40">40</button>
         </div>
@@ -188,12 +189,13 @@
       <div class="setup-presets"><button class="chip on" data-dbgopp="ai">🤖 Contra a IA</button><button class="chip" data-dbgopp="hotseat">👥 2 jogadores locais</button></div>
     </div>
     <div class="setup-field">
-      <label for="heartsRange">❤ Corações de cada jogador: <b id="heartsNum">10</b></label>
-      <input type="range" id="heartsRange" min="1" max="40" step="1" value="10">
+      <label for="heartsRange">❤ Corações de cada jogador: <b id="heartsNum">15</b></label>
+      <input type="range" id="heartsRange" min="1" max="40" step="1" value="15">
       <div class="setup-presets">
         <button class="chip" data-hearts="3">3 · relâmpago</button>
         <button class="chip" data-hearts="5">5 · rápida</button>
-        <button class="chip" data-hearts="10">10 · padrão</button>
+        <button class="chip" data-hearts="10">10 · curta</button>
+        <button class="chip" data-hearts="15">15 · padrão</button>
         <button class="chip" data-hearts="20">20 · longa</button>
         <button class="chip" data-hearts="40">40 · épica</button>
       </div>
@@ -268,8 +270,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
 <script src="js/sfx.b4db72af.js"></script>
-<script src="js/cards.e9adbb46.js"></script>
-<script src="js/engine.6aa30ea1.js"></script>
+<script src="js/cards.34511607.js"></script>
+<script src="js/engine.9ab94733.js"></script>
 <script src="js/ai.71e57fb0.js"></script>
 <script src="js/ui.79100f03.js"></script>
 <script src="js/net.0a7b340f.js"></script>
@@ -280,7 +282,7 @@
   document.body.innerHTML = document.body.innerHTML
     .replaceAll('ICON_DROP', ICON.drop).replaceAll('ICON_BCLOVER', ICON.bclover).replaceAll('ICON_CLOVER', ICON.clover);
 </script>
-<script src="js/main.b3ff309b.js"></script>
+<script src="js/main.822962d6.js"></script>
 <script src="js/pwa.e5ae54e3.js"></script>
 </body>
 </html>

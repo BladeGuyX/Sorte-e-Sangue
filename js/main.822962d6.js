@@ -52,7 +52,7 @@ function startGame(mode, opts = {}) {
 
 /* ---------------- sala online ---------------- */
 
-const ON = { hearts: store.get('ss-hearts') || 10 };
+const ON = { hearts: store.get('ss-hearts2') || DEFAULT_HEARTS };
 
 function openOnline(code) {
   $('#onName').value = store.get('ss-name') || '';
@@ -64,7 +64,7 @@ function openOnline(code) {
 }
 
 function setOnlineHearts(v) {
-  ON.hearts = Math.max(1, Math.min(40, Math.round(+v) || 10));
+  ON.hearts = Math.max(1, Math.min(40, Math.round(+v) || DEFAULT_HEARTS));
   $('#onHeartsRange').value = ON.hearts;
   $('#onHeartsNum').textContent = ON.hearts;
   document.querySelectorAll('[data-onhearts]').forEach((b) => b.classList.toggle('on', +b.dataset.onhearts === ON.hearts));
@@ -119,7 +119,7 @@ Net.onStatus = (st) => {
 
 /* ---------------- configuração da partida ---------------- */
 
-const SETUP = { mode: 'ai', hearts: store.get('ss-hearts') || 10, dbgOpp: 'ai' };
+const SETUP = { mode: 'ai', hearts: store.get('ss-hearts2') || DEFAULT_HEARTS, dbgOpp: 'ai' };
 
 function openSetup(mode) {
   SETUP.mode = mode;
@@ -134,7 +134,7 @@ function openSetup(mode) {
 }
 
 function setHearts(v) {
-  SETUP.hearts = Math.max(1, Math.min(40, Math.round(+v) || 10));
+  SETUP.hearts = Math.max(1, Math.min(40, Math.round(+v) || DEFAULT_HEARTS));
   $('#heartsRange').value = SETUP.hearts;
   $('#heartsNum').textContent = SETUP.hearts;
   document.querySelectorAll('[data-hearts]').forEach((b) => b.classList.toggle('on', +b.dataset.hearts === SETUP.hearts));
@@ -267,7 +267,7 @@ document.addEventListener('click', (e) => {
   if (hb) { SFX.play('click'); setHearts(hb.dataset.hearts); return; }
   if (e.target.closest('#setupGo')) {
     SFX.play('click');
-    store.set('ss-hearts', SETUP.hearts);
+    store.set('ss-hearts2', SETUP.hearts);
     if (SETUP.mode === 'debug') startGame(SETUP.dbgOpp, { hearts: SETUP.hearts, debug: true });
     else if (SETUP.mode === 'khaos') startKhaos(SETUP.dbgOpp, SETUP.hearts);
     else if (SETUP.mode === 'deck') { DB.decks = []; openBuilder(0); }
@@ -278,7 +278,7 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-online]')) { SFX.play('click'); openOnline(''); return; }
   const oh = e.target.closest('[data-onhearts]');
   if (oh) { SFX.play('click'); setOnlineHearts(oh.dataset.onhearts); return; }
-  if (e.target.closest('#onCreateBtn')) { SFX.init(); SFX.play('click'); store.set('ss-hearts', ON.hearts); Net.host(playerName(), ON.hearts, $('#onKhaos').checked); return; }
+  if (e.target.closest('#onCreateBtn')) { SFX.init(); SFX.play('click'); store.set('ss-hearts2', ON.hearts); Net.host(playerName(), ON.hearts, $('#onKhaos').checked); return; }
   if (e.target.closest('#onJoinBtn')) { SFX.init(); SFX.play('click'); Net.join($('#onCode').value, playerName()); return; }
   if (e.target.closest('#onCancel')) { SFX.play('click'); Net.reset(); renderOnlineStatus({ state: 'idle' }); return; }
   if (e.target.closest('#onCopyLink')) { copyText($('#onLink').value, e.target.closest('#onCopyLink')); return; }

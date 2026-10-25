@@ -74,7 +74,7 @@ function mkPlayer(id, name, isAI, deckIds) {
 // modo 'online': o jogador 0 é o anfitrião (roda as regras), o 1 é o convidado remoto
 function newGame(mode, opts = {}) {
   UID = 1;
-  MAX_HP = Math.max(1, Math.min(40, opts.hearts || 10));
+  MAX_HP = Math.max(1, Math.min(40, opts.hearts || DEFAULT_HEARTS));
   const names = opts.names || (mode === 'ai' ? ['Você', 'IA'] : ['Jogador 1', 'Jogador 2']);
   const decks = opts.decks || [];
   BANNED = new Set(opts.khaos ? opts.banned || [] : []);

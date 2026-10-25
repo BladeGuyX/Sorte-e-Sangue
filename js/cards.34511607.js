@@ -3,9 +3,10 @@
    SORTE & SANGUE — definições das cartas e seus efeitos
    ============================================================ */
 
-let MAX_HP = 10;   // escolhido antes de cada partida (1 a 40)
+let MAX_HP = 15;   // escolhido antes de cada partida (1 a 40)
 const START_HAND = 5, HAND_LIMIT = 7;
 const FIELD_SLOTS = 4, MAGIC_SLOTS = 3, LUCK_CAP = 25;
+const DEFAULT_HEARTS = 15;
 const LUCKY_CHARGES = 3, MULLIGANS = 2, TRADE_COST = 5, FUSION_COST = 2;
 
 // cost.t: 'free' | 'blood' (sacrifícios) | 'luck' (sorte mínima) | 'bluck' (sorte de sangue: gasta sorte)
@@ -170,7 +171,7 @@ const CARD_DEFS = [
   { id: 'sobrecarga', name: 'Sobrecarga', type: 'magic', kind: 'active', cost: { t: 'luck', v: 7 }, art: '💥', hue: 10,
     text: 'Destrua uma magia sua para destruir até 2 magias do oponente.' },
   { id: 'selo', name: 'Selo do Silêncio', type: 'magic', kind: 'passive', cost: { t: 'luck', v: 8 }, art: '🔏', hue: 260,
-    text: 'Enquanto estiver no campo, o oponente não pode jogar magias passivas. Se o oponente destruir este selo, ele perde 1 coração.' },
+    text: 'Por 3 turnos seus, o oponente não pode jogar magias passivas. Se o oponente destruir este selo antes disso, ele perde 1 coração.' },
   { id: 'eco', name: 'Eco Arcano', type: 'magic', kind: 'active', cost: { t: 'luck', v: 11 }, art: '🔁', hue: 230,
     text: 'Repete a última magia ativa que o oponente usou nesta partida, como se fosse sua (você escolhe os alvos).' },
   { id: 'lua', name: 'Ritual da Lua Cheia', type: 'magic', kind: 'passive', cost: { t: 'luck', v: 13 }, art: '🌕', hue: 50,
@@ -744,7 +745,16 @@ const ABILITIES = {
     },
   },
   armadilha: {},
-  selo: {},
+  selo: {
+    onPlace(m) { m.charges = 3; },
+    async onTurnStart(m, p) {
+      m.charges--;
+      render();
+      if (m.charges > 0) return;
+      log(`${cn(m)} se apaga: ${opp(p).name} volta a poder jogar magias passivas.`, p.id);
+      await destroy(m, { noSave: true, selfDestruct: true });
+    },
+  },
   roda: {
     async resolve(p) {
       const r = d20();
