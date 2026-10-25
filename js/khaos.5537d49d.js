@@ -2,7 +2,8 @@
 /* ============================================================
    SORTE & SANGUE — modo Khaos
    Antes da partida cada jogador bane 3 cartas (saem dos dois baralhos).
-   A cada 1 a 4 rodadas (sorteado) acontece um evento caótico. Uma rodada = um turno de cada jogador.
+   O primeiro evento caótico vem depois de 2 a 4 rodadas; os seguintes, a cada 1 a 3 rodadas (sorteado).
+   Uma rodada = um turno de cada jogador; as rodadas começam nos turnos ímpares (1, 3, 5...).
    ============================================================ */
 
 const KHAOS_BANS = 3;
@@ -16,16 +17,16 @@ const KHAOS_EVENTS = [
 ];
 
 const Khaos = {
-  // 1 a 4 rodadas; a rodada começa nos turnos ímpares (1, 3, 5...), então o evento cai sempre no início de uma rodada
-  nextIn: () => 2 * (1 + Math.floor(Math.random() * 4)),
+  nextIn: () => 2 * (1 + Math.floor(Math.random() * 3)),   // 1 a 3 rodadas entre eventos (em turnos: 2, 4 ou 6)
 
   setup(opts) {
-    return opts.khaos ? { next: 1 + this.nextIn(), banned: opts.banned || [] } : null;
+    // primeiro evento: depois de 2 a 4 rodadas completas (no início da 3ª à 5ª rodada = turnos 5, 7 ou 9)
+    return opts.khaos ? { next: 1 + 2 * (2 + Math.floor(Math.random() * 3)), banned: opts.banned || [] } : null;
   },
 
   announce() {
     const names = S.khaos.banned.map((id) => `<b class="cn">${DEF(id).name}</b>`).join(', ');
-    log(`🌀 <b>Modo Khaos!</b> Eventos caóticos acontecem a cada 1 a 4 rodadas.${names ? ` Cartas banidas: ${names}.` : ''}`);
+    log(`🌀 <b>Modo Khaos!</b> O primeiro evento caótico vem em 2 a 4 rodadas; depois, a cada 1 a 3 rodadas.${names ? ` Cartas banidas: ${names}.` : ''}`);
   },
 
   // chamado no início de cada turno, depois da rolagem e dos efeitos de início de turno

@@ -260,6 +260,8 @@ function render() {
 function renderPickBanner() {
   const b = $('#pickBanner');
   const pk = UI.picking;
+  // enquanto escolhe uma carta/espaço, o painel de debug sai da frente do tabuleiro
+  document.body.classList.toggle('picking', !!pk);
   if (!pk) { b.classList.remove('show'); return; }
   const mid = $('#midbar');
   b.style.top = `${mid.offsetTop + mid.offsetHeight / 2}px`;

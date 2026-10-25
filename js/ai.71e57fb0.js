@@ -22,10 +22,17 @@ const AI_MAGIC = {
 };
 
 const AI = {
+  me: null,   // jogador que a IA está controlando agora
+
+  // poder como a IA o enxerga: um Coringa disfarçado do oponente parece a carta que ele imita
+  pw(c, ctx = {}) {
+    return c.disguise && c.controller !== this.me ? apparentPower(c, ctx) : power(c, ctx);
+  },
+
   value(c) {
     const d = DEF(c.defId);
     if (d.type !== 'combatant') return AI_MAGIC[d.id] || 2;
-    let v = (onField(c) ? power(c) : d.power + c.bonus) / 100;
+    let v = (onField(c) ? this.pw(c) : d.power + c.bonus) / 100;
     v += AI_EXTRA[c.abilityId] || 0;
     return v;
   },
@@ -37,7 +44,7 @@ const AI = {
     if (d.id === 'berserker') v += 20 * (MAX_HP - p.hp);
     for (const o of p.field) {
       if (o && AB(o).allyAura) v += AB(o).allyAura;
-      if (o && AB(o).cheer) v += power(o, { noCheer: true });
+      if (o && AB(o).cheer) v += this.pw(o, { noCheer: true });
     }
     for (const m of p.magic) if (m && ABILITIES[m.defId].allyPower) v += ABILITIES[m.defId].allyPower;
     return v;
@@ -46,7 +53,7 @@ const AI = {
   laneScore(p, slot, pw) {
     const e = opp(p).field[slot];
     if (!e) return 1.2;
-    const ep = power(e, { defending: true });
+    const ep = this.pw(e, { defending: true });
     if (e.defId === 'peso' && AB(e).cantAttack) return pw > ep ? 2.4 : 0;
     if (pw > ep) return 1.5 + this.value(e) * 0.3;
     if (pw === ep) return 0.2;
@@ -67,6 +74,7 @@ const AI = {
   },
 
   bestMove(p) {
+    this.me = p.id;
     const o = opp(p);
     const shielded = o.magic.some((m) => m && m.defId === 'protecao' && m.charges > 0);
     const oppMagic = o.magic.filter(Boolean);
@@ -188,15 +196,15 @@ const AI = {
       if (purpose === 'destroy') score = this.value(c) + 0.5;
       else if (purpose === 'destroyMagic') score = (AI_MAGIC[c.defId] || 1.5);
       else if (purpose === 'curse') {
-        const pw = power(c);
+        const pw = this.pw(c);
         const mine = P(1 - cand.side).field[cand.slot];
         if (pw <= 200) score = this.value(c) + 1;
-        else if (mine && power(mine, { attacking: true }) <= pw && power(mine, { attacking: true }) > pw - 200) score = this.value(c) * 0.8 + 0.5;
+        else if (mine && this.pw(mine, { attacking: true }) <= pw && this.pw(mine, { attacking: true }) > pw - 200) score = this.value(c) * 0.8 + 0.5;
         else score = 0.7;
       } else if (purpose === 'buff') {
-        const pw = power(c);
+        const pw = this.pw(c);
         const e = opp(p).field[cand.slot];
-        if (e && power(e, { defending: true }) >= pw && power(e, { defending: true }) < pw + 250) score = 2.6 + this.value(e) * 0.3;
+        if (e && this.pw(e, { defending: true }) >= pw && this.pw(e, { defending: true }) < pw + 250) score = 2.6 + this.value(e) * 0.3;
         else score = 1 + pw / 1000;
       } else if (purpose === 'copy') score = AI_EXTRA[c.abilityId] || 0;
       else if (purpose === 'sacrificeMagic') score = -(AI_MAGIC[c.defId] || 1.5);
@@ -220,7 +228,7 @@ const AI = {
       if (o.magic.some((m) => m && m.defId === 'armadilha')) return 1.5 - this.value(c);   // só um combatente fraco desarma a armadilha
       return (AB(c).randomDirect ? 3 : directDamageOf(c)) * 3;
     }
-    const pd = power(e, { defending: true });
+    const pd = this.pw(e, { defending: true });
     if (pa > pd) return 2 + this.value(e) + (e.defId === 'peso' && AB(e).cantAttack ? 3 : 0);
     if (pa === pd) return this.value(e) - this.value(c);
     return -99;
@@ -232,7 +240,7 @@ const AI = {
     const taunt = ignoreTaunt ? -1 : tauntSlot(o);
     for (const c of p.field) {
       if (!c || !canAttack(c)) continue;
-      const pa = power(c, { attacking: true });
+      const pa = this.pw(c, { attacking: true });
       const targets = taunt >= 0 ? [{ side: o.id, zone: 'field', slot: taunt }] : attackTargets(c);
       for (const t of targets) opts.push({ c, slot: t.slot, zone: t.zone, score: this.targetScore(c, pa, t) });
     }
@@ -265,14 +273,14 @@ const AI = {
     const danger = (c, slot) => {
       const e = o.field[slot];
       if (!e || AB(e).cantAttack) return 0.4;
-      const pe = power(e, { attacking: true }), pc = power(c, { defending: true });
+      const pe = this.pw(e, { attacking: true }), pc = this.pw(c, { defending: true });
       return pe > pc ? -this.value(c) : pe === pc ? -0.5 : 0.8;
     };
     let best = null;
     for (const c of p.field) {
       if (!c) continue;
       const from = locate(c).slot, e = o.field[from];
-      const goodAttack = !AB(c).cantAttack && S.turn > 1 && (!e || power(c, { attacking: true }) > power(e, { defending: true }));
+      const goodAttack = !AB(c).cantAttack && S.turn > 1 && (!e || this.pw(c, { attacking: true }) > this.pw(e, { defending: true }));
       if (goodAttack) continue;
       const now = danger(c, from);
       for (let s = 0; s < FIELD_SLOTS; s++) {
@@ -295,6 +303,7 @@ const AI = {
   },
 
   async takeTurn(p) {
+    this.me = p.id;
     UI.setThinking(true);
     await sleep(600);
     if (canLuckyDraw(p) && p.lucky >= 2 && p.hand.length <= 4) await luckyDraw(p);
@@ -344,14 +353,15 @@ const AI = {
   },
 
   decide(p, kind, d) {
+    this.me = p.id;
     switch (kind) {
       case 'confirm':
         if (d.purpose === 'save') return this.value(d.saved) > this.value(d.mago);
         return true;
       case 'pick': {
         if (d.purpose === 'reattack') {
-          const pa = power(d.attacker, { attacking: true });
-          const ok = d.candidates.filter((c) => power(P(c.side).field[c.slot], { defending: true }) < pa);
+          const pa = this.pw(d.attacker, { attacking: true });
+          const ok = d.candidates.filter((c) => this.pw(P(c.side).field[c.slot], { defending: true }) < pa);
           const t = this.bestTarget(p, 'destroy', ok);
           return t ? t.cand : null;
         }

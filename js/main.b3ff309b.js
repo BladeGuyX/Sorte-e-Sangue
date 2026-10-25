@@ -7,7 +7,7 @@ const DECK_SIZE = 40, DECK_MAX_COPIES = 2;
 const MODE_INFO = {
   ai: { title: 'Contra a IA', desc: 'Você contra o computador. Cada um usa um baralho com uma cópia de cada carta.' },
   hotseat: { title: '2 Jogadores', desc: 'Dois jogadores no mesmo computador, revezando a vez. Cada um usa um baralho com uma cópia de cada carta.' },
-  khaos: { title: '🌀 Khaos', desc: 'Antes de começar, cada jogador bane 3 cartas. Durante a partida, a cada 1 a 4 rodadas acontece um evento caótico: Flip, Trade, Change, Ruin, Obliterate ou Bless.' },
+  khaos: { title: '🌀 Khaos', desc: 'Antes de começar, cada jogador bane 3 cartas. Durante a partida, a cada 1 a 3 rodadas (o primeiro em 2 a 4) acontece um evento caótico: Flip, Trade, Change, Ruin, Obliterate ou Bless.' },
   debug: { title: '🛠 Modo Debug', desc: 'Partida de testes: abra o painel 🛠 Debug durante o jogo para pegar qualquer carta, mudar corações e sorte, destruir cartas, liberar custos e mais.' },
   deck: { title: 'Duelo de Decks', desc: `Dois jogadores no mesmo computador. Cada um monta seu próprio deck de ${DECK_SIZE} cartas (até ${DECK_MAX_COPIES} cópias de cada) e eles se enfrentam.` },
 };
@@ -339,6 +339,10 @@ const heldKeys = new Set();
 document.addEventListener('keydown', (e) => {
   heldKeys.add(e.code);
   if (!$('#menu').classList.contains('active') || !e.shiftKey || !heldKeys.has('KeyK') || !heldKeys.has('KeyM')) return;
+  revealDebug();
+});
+
+function revealDebug() {
   const btn = $('#btnDebugMode');
   if (!btn.hidden) return;
   btn.hidden = false;
@@ -346,6 +350,17 @@ document.addEventListener('keydown', (e) => {
   btn.classList.add('reveal');
   SFX.init();
   SFX.play('crit');
+}
+
+// no celular (sem teclado): tocar 7 vezes seguidas no título "Sorte & Sangue"
+let logoTaps = [];
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#menu .logo')) return;
+  const now = Date.now();
+  logoTaps = logoTaps.filter((t) => now - t < 4000);
+  logoTaps.push(now);
+  if (logoTaps.length >= 4 && logoTaps.length < 7) { SFX.init(); SFX.play('tick'); }
+  if (logoTaps.length >= 7) { logoTaps = []; revealDebug(); }
 });
 document.addEventListener('keyup', (e) => heldKeys.delete(e.code));
 window.addEventListener('blur', () => heldKeys.clear());

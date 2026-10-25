@@ -2,8 +2,8 @@
 /* Service worker do Sorte & Sangue: guarda o jogo no aparelho para abrir sem internet.
    O build (build.js) troca VERSION e PRECACHE pelos arquivos reais da dist/. */
 
-const VERSION = 'd2c07981';
-const PRECACHE = ["./","./icons/apple-touch-icon.png","./icons/favicon-48.png","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-512.png","./icons/icon.svg","./index.html","./js/ai.bb9f3c94.js","./js/cards.e9adbb46.js","./js/debug.8079b733.js","./js/engine.6aa30ea1.js","./js/khaos.3cf802a4.js","./js/main.7a0b243c.js","./js/net.0a7b340f.js","./js/pwa.e5ae54e3.js","./js/sfx.b4db72af.js","./js/ui.dfefc11f.js","./manifest.webmanifest","./style.98564066.css"];
+const VERSION = '60ebc091';
+const PRECACHE = ["./","./icons/apple-touch-icon.png","./icons/favicon-48.png","./icons/icon-192.png","./icons/icon-512.png","./icons/icon-maskable-512.png","./icons/icon.svg","./index.html","./js/ai.71e57fb0.js","./js/cards.e9adbb46.js","./js/debug.8079b733.js","./js/engine.6aa30ea1.js","./js/khaos.5537d49d.js","./js/main.b3ff309b.js","./js/net.0a7b340f.js","./js/pwa.e5ae54e3.js","./js/sfx.b4db72af.js","./js/ui.79100f03.js","./manifest.webmanifest","./style.e7186670.css"];
 const CACHE = `sorte-sangue-${VERSION}`;
 // bibliotecas e fontes de fora que também ficam guardadas (o servidor de salas do modo online não)
 const CDN = ['https://cdnjs.cloudflare.com/', 'https://fonts.googleapis.com/', 'https://fonts.gstatic.com/'];
